@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.ApplicationInsights.AspNetCore;
 
 namespace ContinuousWeb
 {
@@ -18,6 +19,21 @@ namespace ContinuousWeb
         {
             Configuration = configuration;
         }
+
+        public Startup(IHostingEnvironment env)
+{
+    var builder = new ConfigurationBuilder()
+        .SetBasePath(env.ContentRootPath)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+        .AddEnvironmentVariables();
+    Configuration = builder.Build();
+
+    if (env.IsDevelopment())
+    {
+        builder.AddApplicationInsightsSettings(developerMode: true);
+    }
+}
 
         public IConfiguration Configuration { get; }
 
@@ -29,6 +45,10 @@ namespace ContinuousWeb
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
+
+                // Add framework services.
+    services.AddMvc();
+    services.AddApplicationInsightsTelemetry(Configuration);
             });
 
 
